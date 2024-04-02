@@ -1,0 +1,68 @@
+<?php
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Block\Product\View;
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Exception\NoSuchEntityException;
+
+/** @var View $block */
+
+// Retrieve the current product
+$product = $block->getProduct();
+
+
+//exit();
+
+//$imagePath = "http://magento1.local/media/catalog/product/n/o/no-image-2.jpg";
+
+// Retrieve ObjectManager instance
+$objectManager = ObjectManager::getInstance();
+
+// Get Product ID
+$productId = $product->getId();
+
+try {
+    // Get Product Repository
+    $productRepository = $block->getProductRepository();
+
+    // Load product by ID
+    $product = $productRepository->getById($productId);
+
+    // Get media gallery entries
+    $mediaGalleryEntries = $product->getMediaGalleryEntries();
+
+    // Check if media gallery entries exist
+    if (!empty($mediaGalleryEntries)) {
+        // Get the first media gallery entry
+        $firstMediaGalleryEntry = reset($mediaGalleryEntries);
+        $imageUrl = $firstMediaGalleryEntry->getFile();
+
+        // Build image path
+        $baseUrl = $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)
+            ->getStore()
+            ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA);
+        $imagePath = $baseUrl . 'catalog/product' . $imageUrl;
+
+        echo $baseUrl . 'catalog/product'. '/n/o/no-image-2.jpg';
+        exit();
+        echo $imagePath;
+    }
+} catch (NoSuchEntityException $e) {
+}
+
+?>
+
+<meta property="og:type" content="product" />
+<meta property="og:title" content="<?= $block->escapeHtmlAttr($block->stripTags($product->getName())) ?>" />
+<meta property="og:image" content="<?= $imagePath ?>" />
+<meta property="og:description" content="<?= $block->escapeHtmlAttr($block->stripTags($product->getShortDescription())) ?>" />
+<meta property="og:url" content="<?= $block->escapeUrl($product->getProductUrl()) ?>" />
+
+<?php if ($priceAmount = $product->getPriceInfo()->getPrice(\Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE)->getAmount()): ?>
+    <meta property="product:price:amount" content="<?= $block->escapeHtmlAttr($priceAmount) ?>"/>
+    <?= $block->getChildHtml('meta.currency') ?>
+<?php endif; ?>
